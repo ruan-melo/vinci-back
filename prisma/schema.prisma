@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User{
+  id          String @id @default(uuid())
+  name        String @db.VarChar(255)
+  avatar      String?
+  password    String @db.VarChar(60)
+  email       String  @unique
+  profile_name String @unique @db.VarChar(60)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts      Post[]
+  reactions  Reaction[]
+  comments  Comment[]
+  followers   Follow[] @relation(name: "UserFollowers")
+  follows  Follow[] @relation(name: "UserFollows")
+
+  @@map("users")
+  @@index([email])
+  @@index([profile_name])
+}
+
+model Post{
+  id         String @id @default(uuid())
+  author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId   String
+  caption    String @db.VarChar(2200)
+  medias     PostMedia[]
+  comments   Comment[]
+  reactions  Reaction[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@map("posts")
+  @@index([authorId])
+}
+
+model PostMedia{
+  id         String @id @default(uuid())
+  post       Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     String
+  position   Int
+  media      String @db.VarChar(255)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("post_medias")
+}
+
+
+model Comment{
+  id         String @id @default(uuid())
+  post       Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     String
+  author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId   String
+  text      String @db.VarChar(2200)
+
+  @@map("comments")
+}
+
+
+model Reaction{
+  post      Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String 
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@id([postId, userId])
+  @@map("reactions")
+}
+
+model Follow{
+  follower    User   @relation(name: "UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String
+  following   User   @relation(name: "UserFollowers" ,fields: [followingId], references: [id], onDelete: Cascade)
+  followingId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@id([followerId, followingId])
+  @@map("follows")
+  @@index([followerId, followingId])
+}
