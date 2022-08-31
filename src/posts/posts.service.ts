@@ -62,6 +62,28 @@ export class PostsService {
 
   async delete(id: string) {
     await this.prismaService.post.delete({ where: { id } });
-    return `This action removes a #${id} post`;
+  }
+
+  async getTimeline(userId: string) {
+    const following = await this.prismaService.follow.findMany({
+      where: {
+        followerId: userId,
+      },
+      select: {
+        followingId: true,
+      },
+    });
+
+    const followingIds = following.map((follow) => follow.followingId);
+
+    const posts = await this.prismaService.post.findMany({
+      where: { authorId: { in: followingIds } },
+      include: {
+        medias: true,
+        author: true,
+      },
+    });
+
+    return posts;
   }
 }

@@ -17,7 +17,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Post as PrismaPost, Prisma, User } from '@prisma/client';
+import { Post as PrismaPost, Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 
@@ -30,6 +30,10 @@ import {
 } from 'src/storage/config/upload/avatar';
 import { UserMap, userMapper } from './mappers/user.mapper';
 import { MediaMap, mediaMapper } from 'src/posts/mappers/mediaMapper';
+import { UserNotFoundException } from './exceptions/UserNotFoundException';
+import { User } from 'src/decorators/user.decorator';
+import { AuthOptional, Public } from 'src/auth/guards';
+import { UserProfile } from './interfaces/user-profile.interface';
 
 @Controller('users')
 export class UsersController {
@@ -47,23 +51,47 @@ export class UsersController {
     return userMapper(user);
   }
 
+  @Patch('/avatar')
+  @UseInterceptors(FileInterceptor('file', uploadAvatarConfig))
+  async updateAvatar(
+    @Req() req: { user: UserJwt },
+    @UploadedFile(ParseAvatarFilePipe)
+    file: Express.Multer.File,
+  ): Promise<UserMap> {
+    const user = await this.usersService.updateAvatar(req.user.id, file);
+    return userMapper(user);
+  }
+
+  @Delete('/avatar')
+  async deleteAvatar(@User() user: UserJwt): Promise<UserMap> {
+    const updatedUser = await this.usersService.deleteAvatar(user.id);
+    return userMapper(updatedUser);
+  }
+
+  // @Public()
+  @AuthOptional()
   @Get(':profileName')
   async findByProfileName(
+    @Request() req: { user: UserJwt },
+    @User() user: UserJwt | null,
     @Param('profileName') profileName: string,
     @Query('posts', ParseBoolPipe) includePosts?: boolean,
-  ): Promise<
-    UserMap | (UserMap & { posts: PrismaPost & { medias: MediaMap } })
-  > {
+  ): Promise<UserProfile> {
     const include: Prisma.UserInclude = includePosts
       ? { posts: { include: { medias: true } } }
       : {};
-    const user = await this.usersService.findByProfileName(
+
+    const profileUser = await this.usersService.findByProfileName(
       profileName,
       include,
     );
 
-    if ('posts' in user) {
-      user.posts = user.posts.map((post) => {
+    if (!profileUser) {
+      throw new UserNotFoundException();
+    }
+
+    if ('posts' in profileUser) {
+      profileUser.posts = profileUser.posts.map((post) => {
         return {
           ...post,
           medias: post.medias.map((media) => mediaMapper(media)),
@@ -71,7 +99,16 @@ export class UsersController {
       }) as any;
     }
 
-    return userMapper(user);
+    let follow = false; // default value
+
+    if (user) {
+      follow = await this.usersService.isFollowing(
+        user.id,
+        profileUser.profile_name,
+      );
+    }
+
+    return { ...userMapper(profileUser), follow };
   }
 
   // @Post()
@@ -86,14 +123,19 @@ export class UsersController {
     await this.usersService.delete(id);
   }
 
-  @Patch('/avatar')
-  @UseInterceptors(FileInterceptor('file', uploadAvatarConfig))
-  async updateAvatar(
-    @Req() req: { user: UserJwt },
-    @UploadedFile(ParseAvatarFilePipe)
-    file: Express.Multer.File,
-  ): Promise<UserMap> {
-    const user = await this.usersService.updateAvatar(req.user.id, file);
-    return userMapper(user);
+  @Post(':profile_name/follow')
+  async follow(
+    @Param('profile_name') profile_name: string,
+    @User() user: UserJwt,
+  ): Promise<void> {
+    await this.usersService.follow(user.id, profile_name);
+  }
+
+  @Delete(':profile_name/follow')
+  async unfollow(
+    @Param('profile_name') profile_name: string,
+    @User() user: UserJwt,
+  ): Promise<void> {
+    await this.usersService.unfollow(user.id, profile_name);
   }
 }

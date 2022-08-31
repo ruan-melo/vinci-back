@@ -7,4 +7,7 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export const OVERRIDE_KEY = 'wasReplaced';
 export const Override = () => SetMetadata(OVERRIDE_KEY, true);
 
+export const IS_AUTH_OPTIONAL_KEY = 'isAuthOptional';
+export const AuthOptional = () => SetMetadata(IS_AUTH_OPTIONAL_KEY, true);
+
 export { JwtAuthGuard };

@@ -29,15 +29,12 @@ export class UsersService {
           medias: PostMedia[];
         })[];
       })
+    | null
   > {
     const user = await this.prismaService.user.findFirst({
       where: { profile_name: profileName },
       include,
     });
-
-    if (!user) {
-      throw new UserNotFoundException();
-    }
 
     return user;
   }
@@ -94,6 +91,24 @@ export class UsersService {
     await this.prismaService.user.delete({ where: { id } });
   }
 
+  async isFollowing(
+    followerId: string,
+    followedProfileName: string,
+  ): Promise<boolean> {
+    const followed = await this.findByProfileName(followedProfileName);
+
+    if (!followed) {
+      throw new UserNotFoundException();
+    }
+    const follow = await this.prismaService.follow.findFirst({
+      where: {
+        AND: [{ followerId: followerId }, { followingId: followed.id }],
+      },
+    });
+
+    return !!follow;
+  }
+
   async updateAvatar(id: string, file: Express.Multer.File) {
     const user = await this.prismaService.user.findFirst({ where: { id } });
 
@@ -120,5 +135,76 @@ export class UsersService {
     });
 
     return userUpdated;
+  }
+
+  async deleteAvatar(id: string): Promise<User | null> {
+    const user = await this.prismaService.user.findFirst({ where: { id } });
+
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+
+    if (user.avatar) {
+      await this.storageProvider.delete(user.avatar, AVATAR_FOLDER);
+    }
+
+    const userUpdated = await this.prismaService.user.update({
+      where: { id },
+      data: { avatar: null },
+    });
+
+    return userUpdated;
+  }
+
+  async follow(followerId: string, followingProfileName: string) {
+    const followingUser = await this.findByProfileName(followingProfileName);
+
+    if (!followingUser) {
+      throw new UserNotFoundException();
+    }
+
+    const alreadyFollow = await this.prismaService.follow.findFirst({
+      where: {
+        AND: [{ followerId: followerId }, { followingId: followingUser.id }],
+      },
+    });
+
+    if (alreadyFollow) {
+      throw new HttpException('You are already following this user', 400);
+    }
+
+    return await this.prismaService.follow.create({
+      data: {
+        followerId,
+        followingId: followingUser.id,
+      },
+    });
+  }
+
+  async unfollow(followerId: string, followingProfileName: string) {
+    const followingUser = await this.findByProfileName(followingProfileName);
+
+    if (!followingUser) {
+      throw new UserNotFoundException();
+    }
+
+    const follow = await this.prismaService.follow.findFirst({
+      where: {
+        AND: [{ followerId: followerId }, { followingId: followingUser.id }],
+      },
+    });
+
+    if (!follow) {
+      throw new HttpException('You are not following this user', 400);
+    }
+
+    return await this.prismaService.follow.delete({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId: followingUser.id,
+        },
+      },
+    });
   }
 }

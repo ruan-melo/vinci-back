@@ -24,7 +24,13 @@ import {
   uploadMediaConfig,
 } from 'src/storage/config/upload/media';
 import { User } from 'src/decorators/user.decorator';
-import { User as PrismaUser } from '@prisma/client';
+import {
+  Post as PrismaPost,
+  PostMedia,
+  User as PrismaUser,
+} from '@prisma/client';
+import { UserJwt } from 'src/auth/strategies/jwt.strategy';
+import { mediaMapper } from './mappers/mediaMapper';
 
 @Controller('posts')
 export class PostsController {
@@ -43,6 +49,17 @@ export class PostsController {
   @Get()
   findAll() {
     return this.postsService.findAll();
+  }
+
+  @Get('/timeline')
+  async getTimeline(@User() user: UserJwt) {
+    const timeline = await this.postsService.getTimeline(user.id);
+    return timeline.map((post) => {
+      return {
+        ...post,
+        medias: post.medias.map((media) => mediaMapper(media)),
+      };
+    });
   }
 
   @Get(':id')
