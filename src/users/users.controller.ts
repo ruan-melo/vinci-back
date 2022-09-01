@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   FileTypeValidator,
   Get,
@@ -17,7 +18,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Post as PrismaPost, Prisma } from '@prisma/client';
+import { Post as PrismaPost, Prisma, User as PrismaUser } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 
@@ -34,6 +35,8 @@ import { UserNotFoundException } from './exceptions/UserNotFoundException';
 import { User } from 'src/decorators/user.decorator';
 import { AuthOptional, Public } from 'src/auth/guards';
 import { UserProfile } from './interfaces/user-profile.interface';
+import { OptionalQuery } from 'src/decorators/optional-query.decorator';
+import { UserAllProfile } from './interfaces/user-all-profile.interface';
 
 @Controller('users')
 export class UsersController {
@@ -75,16 +78,33 @@ export class UsersController {
     @Request() req: { user: UserJwt },
     @User() user: UserJwt | null,
     @Param('profileName') profileName: string,
-    @Query('posts', ParseBoolPipe) includePosts?: boolean,
+    @Query('posts', new DefaultValuePipe(false), ParseBoolPipe)
+    includePosts: boolean,
+    @Query('followers_count', new DefaultValuePipe(false), ParseBoolPipe)
+    followers: boolean,
+    @Query('following_count', new DefaultValuePipe(false), ParseBoolPipe)
+    following: boolean,
   ): Promise<UserProfile> {
-    const include: Prisma.UserInclude = includePosts
-      ? { posts: { include: { medias: true } } }
-      : {};
+    const include: Prisma.UserInclude = {
+      posts: { include: { medias: true } },
+      _count: {
+        select: {
+          followers: true,
+          follows: true,
+        },
+      },
+    };
 
-    const profileUser = await this.usersService.findByProfileName(
+    if (includePosts) {
+      include.posts = { include: { medias: true } };
+    }
+
+    const profileUser = (await this.usersService.findByProfileName(
       profileName,
       include,
-    );
+    )) as UserAllProfile;
+
+    console.log(profileUser, profileUser);
 
     if (!profileUser) {
       throw new UserNotFoundException();
@@ -108,7 +128,12 @@ export class UsersController {
       );
     }
 
-    return { ...userMapper(profileUser), follow };
+    return {
+      ...userMapper(profileUser),
+      follow,
+      followers_count: profileUser._count.followers,
+      following_count: profileUser._count.follows,
+    };
   }
 
   // @Post()

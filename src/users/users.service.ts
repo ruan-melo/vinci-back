@@ -22,18 +22,13 @@ export class UsersService {
   async findByProfileName(
     profileName: string,
     include?: Prisma.UserInclude,
-  ): Promise<
-    | User
-    | (User & {
-        posts: (Post & {
-          medias: PostMedia[];
-        })[];
-      })
-    | null
-  > {
+  ): Promise<User | null> {
     const user = await this.prismaService.user.findFirst({
       where: { profile_name: profileName },
-      include,
+      include: {
+        posts: { include: { medias: true } },
+        _count: { select: { followers: true, follows: true } },
+      },
     });
 
     return user;
