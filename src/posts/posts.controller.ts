@@ -13,6 +13,7 @@ import {
   Query,
   ParseBoolPipe,
   ConflictException,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -27,10 +28,13 @@ import { User } from 'src/decorators/user.decorator';
 import {
   Post as PrismaPost,
   PostMedia,
+  Prisma,
+  Reaction,
   User as PrismaUser,
 } from '@prisma/client';
 import { UserJwt } from 'src/auth/strategies/jwt.strategy';
 import { mediaMapper } from './mappers/mediaMapper';
+import { Public } from 'src/auth/guards';
 
 @Controller('posts')
 export class PostsController {
@@ -51,9 +55,41 @@ export class PostsController {
     return this.postsService.findAll();
   }
 
+  @Post(':id/comments')
+  async createComment(
+    @Param('id') id: string,
+    @Body('text') text: string,
+    @User() user: PrismaUser,
+  ) {
+    console.log('comments create', text);
+    return this.postsService.createComment({
+      authorId: user.id,
+      postId: id,
+      text,
+    });
+  }
+
+  @Get(':id/comments')
+  async getComments(@Param('id') id: string) {
+    return this.postsService.getComments(id);
+  }
+
+  @Delete(':id/comments/:commentId')
+  async deleteComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @User() user: PrismaUser,
+  ) {
+    return this.postsService.deleteComment({
+      commentId: commentId,
+      userId: user.id,
+    });
+  }
+
   @Get('/timeline')
   async getTimeline(@User() user: UserJwt) {
     const timeline = await this.postsService.getTimeline(user.id);
+
     return timeline.map((post) => {
       return {
         ...post,
@@ -62,12 +98,43 @@ export class PostsController {
     });
   }
 
+  @Public()
   @Get(':id')
-  findOne(
+  async findOne(
     @Param('id') id: string,
-    // @Query('posts', ParseBoolPipe) posts: boolean,
+    @Query('medias', new DefaultValuePipe(false), ParseBoolPipe)
+    medias: boolean,
+    @Query('comments', new DefaultValuePipe(false), ParseBoolPipe)
+    comments: boolean,
+    @Query('likes', new DefaultValuePipe(false), ParseBoolPipe) likes: boolean,
+    @Query('liked', new DefaultValuePipe(false), ParseBoolPipe) liked: boolean,
+    @Query('author', new DefaultValuePipe(false), ParseBoolPipe)
+    author: boolean,
+    @User() user: UserJwt,
   ) {
-    return this.postsService.findOne(id);
+    const include: Prisma.PostInclude = {};
+
+    if (medias) {
+      include.medias = true;
+    }
+
+    if (comments) {
+      include.comments = { include: { author: true } };
+    }
+
+    if (author) {
+      include.author = true;
+    }
+
+    if (likes && user) {
+      include.likes = { where: { userId: user.id } };
+    }
+
+    const post = (await this.postsService.findOne(
+      id,
+      include,
+    )) as PrismaPost & { likes?: Reaction[] };
+    return { post, liked: post.likes ? post.likes.length > 0 : false };
   }
 
   // @Patch(':id')
@@ -76,12 +143,27 @@ export class PostsController {
   // }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @User() user: PrismaUser) {
+  async delete(@Param('id') id: string, @User() user: UserJwt) {
     const post = await this.postsService.findOne(id);
 
     if (post.authorId !== user.id) {
       throw new ConflictException('You are not authorized to delete this post');
     }
-    return this.postsService.delete(id);
+    return this.postsService.delete({ postId: id, userId: user.id });
+  }
+
+  @Get(':id/likes')
+  async getLikes(@Param('id') id: string) {
+    return this.postsService.getLikes(id);
+  }
+
+  @Post(':id/likes')
+  async likePost(@Param('id') id: string, @User() user: UserJwt) {
+    return this.postsService.likePost({ postId: id, userId: user.id });
+  }
+
+  @Delete(':id/likes')
+  async unlikePost(@Param('id') id: string, @User() user: UserJwt) {
+    return this.postsService.unlikePost({ postId: id, userId: user.id });
   }
 }

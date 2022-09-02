@@ -51,7 +51,7 @@ export class PostsService {
   async findOne(id: string, include?: Prisma.PostInclude) {
     const post = await this.prismaService.post.findFirst({
       where: { id },
-      // include,
+      include,
     });
     return post;
   }
@@ -60,8 +60,15 @@ export class PostsService {
     return `This action updates a #${id} post`;
   }
 
-  async delete(id: string) {
-    await this.prismaService.post.delete({ where: { id } });
+  async delete({ postId, userId }: { postId: string; userId: string }) {
+    const post = await this.prismaService.post.findFirst({
+      where: { id: postId },
+    });
+
+    if (post.authorId !== userId) {
+      throw new Error('Unauthorized');
+    }
+    await this.prismaService.post.delete({ where: { id: postId } });
   }
 
   async getTimeline(userId: string) {
@@ -81,9 +88,116 @@ export class PostsService {
       include: {
         medias: true,
         author: true,
+        likes: {
+          where: {
+            userId,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+            likes: true,
+          },
+        },
       },
     });
 
-    return posts;
+    return posts.map((post) => ({
+      ...post,
+      comments_count: post._count.comments,
+      likes_count: post._count.likes,
+      liked: post.likes.length > 0,
+    }));
+  }
+
+  async createComment({
+    postId,
+    text,
+    authorId,
+  }: {
+    postId: string;
+    text: string;
+    authorId: string;
+  }) {
+    const comment = await this.prismaService.comment.create({
+      data: {
+        text,
+        authorId,
+        postId,
+      },
+    });
+
+    return comment;
+  }
+
+  async deleteComment({
+    commentId,
+    userId,
+  }: {
+    commentId: string;
+    userId: string;
+  }) {
+    const comment = await this.prismaService.comment.findFirst({
+      where: { id: commentId },
+    });
+
+    if (comment.authorId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    await this.prismaService.comment.delete({ where: { id: commentId } });
+  }
+
+  async getComments(postId: string) {
+    const comments = await this.prismaService.comment.findMany({
+      where: { postId },
+      include: { author: true },
+    });
+
+    return comments;
+  }
+
+  async getLikes(postId: string) {
+    const likes = await this.prismaService.reaction.findMany({
+      where: { postId },
+      include: { user: true },
+    });
+
+    return likes;
+  }
+
+  async likePost({ postId, userId }: { postId: string; userId: string }) {
+    const reaction = await this.prismaService.reaction.create({
+      data: {
+        postId,
+        userId,
+      },
+    });
+
+    return reaction;
+  }
+
+  async unlikePost({ postId, userId }: { postId: string; userId: string }) {
+    const reaction = await this.prismaService.reaction.delete({
+      where: {
+        postId_userId: {
+          postId,
+          userId,
+        },
+      },
+    });
+
+    return reaction;
+  }
+
+  async hasLiked({ postId, userId }: { postId: string; userId: string }) {
+    const reaction = await this.prismaService.reaction.findFirst({
+      where: {
+        postId: postId,
+        userId: userId,
+      },
+    });
+
+    return !!reaction;
   }
 }
