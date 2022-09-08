@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { Transform, Type } from 'class-transformer';
+import { Transform, TransformFnParams, Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -74,6 +74,12 @@ export class CreatePostDto
     >
 {
   @IsOptional()
+  @Transform(({ value }: TransformFnParams) => {
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    return value;
+  })
   @MaxLength(2200)
   caption: string;
 

@@ -19,6 +19,60 @@ export class UsersService {
     return await this.prismaService.user.findMany();
   }
 
+  async update(userId: string, data: Prisma.UserUpdateInput) {
+    const user = await this.prismaService.user.findFirst({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+
+    const userUpdated = await this.prismaService.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    return userUpdated;
+  }
+
+  async updatePassword(
+    userId,
+    {
+      current_password,
+      password,
+    }: { current_password: string; password: string },
+  ) {
+    const user = await this.prismaService.user.findFirst({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      current_password,
+      user.password,
+    );
+
+    if (!isPasswordCorrect) {
+      throw new HttpException('Current password is incorrect', 401);
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      Number(process.env.PASSWORD_ROUNDS),
+    );
+
+    const userUpdated = await this.prismaService.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return userUpdated;
+  }
+
   async findByProfileName(
     profileName: string,
     include?: Prisma.UserInclude,

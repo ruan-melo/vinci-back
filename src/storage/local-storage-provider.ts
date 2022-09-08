@@ -14,8 +14,6 @@ export class LocalStorageProvider implements StorageProviderInterface {
    */
   async save(file: Express.Multer.File, folder: string): Promise<string> {
     const destination = resolve(UPLOAD_DESTINATION, folder, file.filename);
-    console.log('destination', resolve(destination));
-    console.log('filepath', resolve(file.path));
     const result = await fs.promises.rename(
       resolve(file.path),
       resolve(destination),

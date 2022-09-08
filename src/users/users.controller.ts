@@ -11,6 +11,7 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   Request,
@@ -37,6 +38,8 @@ import { AuthOptional, Public } from 'src/auth/guards';
 import { UserProfile } from './interfaces/user-profile.interface';
 import { OptionalQuery } from 'src/decorators/optional-query.decorator';
 import { UserAllProfile } from './interfaces/user-all-profile.interface';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 
 @Controller('users')
 export class UsersController {
@@ -54,6 +57,16 @@ export class UsersController {
     return userMapper(user);
   }
 
+  @Put('profile')
+  async updateProfile(
+    @User() user: UserJwt,
+    @Body() data: UpdateUserProfileDto,
+  ) {
+    const updatedUser = await this.usersService.update(user.id, data);
+
+    return userMapper(updatedUser);
+  }
+
   @Patch('/avatar')
   @UseInterceptors(FileInterceptor('file', uploadAvatarConfig))
   async updateAvatar(
@@ -62,7 +75,16 @@ export class UsersController {
     file: Express.Multer.File,
   ): Promise<UserMap> {
     const user = await this.usersService.updateAvatar(req.user.id, file);
+    // console.log('body');
     return userMapper(user);
+  }
+
+  @Patch('/password')
+  async updatePassword(
+    @Body() data: UpdateUserPasswordDto,
+    @User() user: UserJwt,
+  ) {
+    await this.usersService.updatePassword(user.id, data);
   }
 
   @Delete('/avatar')
@@ -103,8 +125,6 @@ export class UsersController {
       profileName,
       include,
     )) as UserAllProfile;
-
-    console.log(profileUser, profileUser);
 
     if (!profileUser) {
       throw new UserNotFoundException();

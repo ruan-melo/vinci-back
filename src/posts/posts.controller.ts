@@ -26,6 +26,7 @@ import {
 } from 'src/storage/config/upload/media';
 import { User } from 'src/decorators/user.decorator';
 import {
+  Comment,
   Post as PrismaPost,
   PostMedia,
   Prisma,
@@ -34,7 +35,9 @@ import {
 } from '@prisma/client';
 import { UserJwt } from 'src/auth/strategies/jwt.strategy';
 import { mediaMapper } from './mappers/mediaMapper';
-import { Public } from 'src/auth/guards';
+import { commentMapper } from './mappers/commentMapper';
+import { AuthOptional, Public } from 'src/auth/guards';
+import { userMapper } from 'src/users/mappers/user.mapper';
 
 @Controller('posts')
 export class PostsController {
@@ -61,7 +64,6 @@ export class PostsController {
     @Body('text') text: string,
     @User() user: PrismaUser,
   ) {
-    console.log('comments create', text);
     return this.postsService.createComment({
       authorId: user.id,
       postId: id,
@@ -98,7 +100,7 @@ export class PostsController {
     });
   }
 
-  @Public()
+  @AuthOptional()
   @Get(':id')
   async findOne(
     @Param('id') id: string,
@@ -106,6 +108,10 @@ export class PostsController {
     medias: boolean,
     @Query('comments', new DefaultValuePipe(false), ParseBoolPipe)
     comments: boolean,
+    @Query('likes_count', new DefaultValuePipe(false), ParseBoolPipe)
+    likesCount: boolean,
+    @Query('comments_count', new DefaultValuePipe(false), ParseBoolPipe)
+    commentsCount: boolean,
     @Query('likes', new DefaultValuePipe(false), ParseBoolPipe) likes: boolean,
     @Query('liked', new DefaultValuePipe(false), ParseBoolPipe) liked: boolean,
     @Query('author', new DefaultValuePipe(false), ParseBoolPipe)
@@ -126,15 +132,56 @@ export class PostsController {
       include.author = true;
     }
 
-    if (likes && user) {
-      include.likes = { where: { userId: user.id } };
+    const count: Prisma.PostCountOutputTypeArgs = { select: {} };
+    if (likesCount) {
+      count.select.likes = true;
+    }
+
+    if (commentsCount) {
+      count.select.comments = true;
+    }
+
+    if (count.select.likes || count.select.comments) {
+      include._count = count;
+    }
+
+    if (likes) {
+      include.likes = { include: { user: true } };
     }
 
     const post = (await this.postsService.findOne(
       id,
       include,
-    )) as PrismaPost & { likes?: Reaction[] };
-    return { post, liked: post.likes ? post.likes.length > 0 : false };
+    )) as PrismaPost & {
+      likes?: Reaction[];
+      medias?: PostMedia[];
+      comments?: Comment[];
+      author?: PrismaUser;
+      _count?: {
+        likes?: number;
+        comments?: number;
+      };
+    };
+
+    let hasLiked = false;
+
+    if (user) {
+      hasLiked = await this.postsService.hasLiked({
+        postId: id,
+        userId: user.id,
+      });
+    }
+
+    console.log('hasLiked', id, user.id);
+    return {
+      ...post,
+      author: post.author ? userMapper(post.author) : null,
+      comments_count: post._count?.comments,
+      likes_count: post._count?.likes,
+      comments: post.comments?.map((comment) => commentMapper(comment)),
+      medias: post.medias?.map((media) => mediaMapper(media)) || [],
+      liked: hasLiked,
+    };
   }
 
   // @Patch(':id')

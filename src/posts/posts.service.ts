@@ -19,12 +19,9 @@ export class PostsService {
     caption?: string,
   ) {
     // Save all medias to storage (Promise.all will wait for all promises to resolve and keep the order)
-    console.log('khaliu');
     const filenames = await Promise.all(
       files.map((file) => this.storageProvider.save(file, MEDIA_FOLDER)),
     );
-
-    console.log('CARAMBOLAS', filenames);
 
     const post = await this.prismaService.post.create({
       data: {
@@ -167,6 +164,7 @@ export class PostsService {
   }
 
   async likePost({ postId, userId }: { postId: string; userId: string }) {
+    console.log(postId, userId);
     const reaction = await this.prismaService.reaction.create({
       data: {
         postId,
