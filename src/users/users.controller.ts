@@ -40,10 +40,24 @@ import { OptionalQuery } from 'src/decorators/optional-query.decorator';
 import { UserAllProfile } from './interfaces/user-all-profile.interface';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { TokensService } from '../notifications/tokens.service';
+import { RegisterTokenDto } from './dto/register-token-dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private tokensService: TokensService,
+  ) {}
+
+  @Post('/tokens')
+  async registerToken(
+    @Body() registerTokenDto: RegisterTokenDto,
+    @User() user: UserJwt,
+  ) {
+    await this.tokensService.storeToken(registerTokenDto.token, user.id);
+    return;
+  }
 
   @Get()
   async findAll(): Promise<UserMap[]> {

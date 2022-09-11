@@ -31,6 +31,8 @@ lerna-debug.log*
 
 uploads/
 
+firebase-admin-sdk.json
+
 # IDE - VSCode
 .vscode/*
 !.vscode/settings.json

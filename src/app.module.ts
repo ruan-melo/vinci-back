@@ -11,10 +11,14 @@ import { defaultUploadConfig } from './storage/config/upload';
 import { LocalStorageProvider } from './storage/local-storage-provider';
 import { StorageModule } from './storage/storage.module';
 import { PostsModule } from './posts/posts.module';
+import { FirebaseService } from './notifications/firebase.service';
+import { NotificationsService } from './notifications/notifications.service';
+import { NotificationsModule } from './notifications/notifications.module';
 
-@Global()
 @Module({
+  providers: [AppService],
   imports: [
+    NotificationsModule,
     // Importando módulo do Multer, que é Global e pode ser acessado por toda a aplicação a partir dessa importação.
     MulterModule.register({
       ...defaultUploadConfig,
@@ -29,6 +33,5 @@ import { PostsModule } from './posts/posts.module';
     PostsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
