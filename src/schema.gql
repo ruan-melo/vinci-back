@@ -2,13 +2,27 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Comment {
+  id: String!
+  text: String
+  author: User!
+}
+
+type Reaction {
+  postId: String!
+  userId: String!
+}
+
 type Post {
   id: String!
+  likes: [Reaction!]
+  comments: [Comment!]
+  likesCount: Int
+  commentsCount: Int
   caption: String
-  createdAt: String
+  createdAt: DateTime
   updatedAt: DateTime
-  image: String
-  author: [User!]!
+  author: User!
   medias: [Media!]!
 }
 
@@ -26,6 +40,8 @@ type User {
   createdAt: DateTime
   updatedAt: DateTime
   posts: [Post!]!
+  followers: [User!]!
+  followersCount: Int!
 }
 
 type Media {
@@ -38,11 +54,18 @@ type Media {
 
 type Query {
   user(email: String!): User!
+  profile: User!
   posts(email: String!): [Post!]!
   post(id: String!): Post!
 }
 
 type Mutation {
+  editProfile(name: String, email: String, profile_name: String): User!
   createUser(name: String!, password: String!, email: String!, profile_name: String!): User!
-  getAuthor: Post!
+  follow(profile_name: String!): String!
+  unfollow(profile_name: String!): String!
+  likePost(id: String!): Post!
+  unlikePost(id: String!): Post!
+  deleteComment(commentId: String!): String!
+  comment(postId: String!, text: String!): Post!
 }

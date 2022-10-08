@@ -14,10 +14,14 @@ export class LocalStorageProvider implements StorageProviderInterface {
    */
   async save(file: Express.Multer.File, folder: string): Promise<string> {
     const destination = resolve(UPLOAD_DESTINATION, folder, file.filename);
+    const location = resolve(tmpFolder, folder, file.filename);
     const result = await fs.promises.rename(
-      resolve(file.path),
+      resolve(location),
       resolve(destination),
     );
+
+    // Remove from temp folder
+    // await fs.promises.unlink(location);
 
     return file.filename;
   }

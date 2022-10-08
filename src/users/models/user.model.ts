@@ -25,6 +25,6 @@ export class User {
   @Field({ nullable: true })
   updatedAt?: Date;
 
-  @Field(() => [Post])
-  posts: Post[];
+  // @Field(() => [Post], { nullable: true })
+  // posts: Post[];
 }

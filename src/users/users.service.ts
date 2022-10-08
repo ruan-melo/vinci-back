@@ -19,6 +19,36 @@ export class UsersService {
     return await this.prismaService.user.findMany();
   }
 
+  async findById(
+    userId: string,
+    include?: Prisma.UserInclude,
+  ): Promise<User & { _count?: { followers?: number; follows?: number } }> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      include,
+    });
+    return user;
+  }
+
+  async getUserFollowers(userId: string): Promise<User[]> {
+    const userFollowers = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: {
+        followers: {
+          select: {
+            follower: true,
+          },
+        },
+      },
+    });
+
+    if (!userFollowers) {
+      throw new UserNotFoundException();
+    }
+
+    return userFollowers.followers.map((f) => f.follower) || [];
+  }
+
   async update(userId: string, data: Prisma.UserUpdateInput) {
     const user = await this.prismaService.user.findFirst({
       where: { id: userId },
@@ -76,7 +106,17 @@ export class UsersService {
   async findByProfileName(
     profileName: string,
     include?: Prisma.UserInclude,
-  ): Promise<User | null> {
+  ): Promise<
+    User & {
+      posts: (Post & {
+        medias: PostMedia[];
+      })[];
+      _count: {
+        followers: number;
+        follows: number;
+      };
+    }
+  > {
     const user = await this.prismaService.user.findFirst({
       where: { profile_name: profileName },
       include: {
@@ -211,6 +251,10 @@ export class UsersService {
     if (!followingUser) {
       throw new UserNotFoundException();
     }
+
+    // if (followingUser.id === followerId) {
+    //   throw new HttpException('You cannot follow yourself', 400);
+    // }
 
     const alreadyFollow = await this.prismaService.follow.findFirst({
       where: {

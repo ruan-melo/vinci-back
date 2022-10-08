@@ -53,6 +53,14 @@ export class PostsService {
     return medias;
   }
 
+  async getComment(commentId: string) {
+    const comment = await this.prismaService.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    return comment;
+  }
+
   async findOne(id: string, include?: Prisma.PostInclude) {
     const post = await this.prismaService.post.findFirst({
       where: { id },
@@ -144,21 +152,7 @@ export class PostsService {
     return comment;
   }
 
-  async deleteComment({
-    commentId,
-    userId,
-  }: {
-    commentId: string;
-    userId: string;
-  }) {
-    const comment = await this.prismaService.comment.findFirst({
-      where: { id: commentId },
-    });
-
-    if (comment.authorId !== userId) {
-      throw new Error('Unauthorized');
-    }
-
+  async deleteComment(commentId: string) {
     await this.prismaService.comment.delete({ where: { id: commentId } });
   }
 

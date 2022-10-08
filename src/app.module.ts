@@ -21,16 +21,18 @@ import { PostsService } from './posts/posts.service';
 import { UsersResolver } from './users/users.resolver';
 import { TokensService } from './notifications/tokens.service';
 import { PostsResolver } from './posts/posts.resolver';
+import { CommentsResolver } from './posts/comments.resolver';
 
 @Module({
-  providers: [
-    // FirebaseService,
-    // TokensService,
-    UsersService,
-    PostsService,
-    UsersResolver,
-    PostsResolver,
-  ],
+  // providers: [
+  //   // FirebaseService,
+  //   // TokensService,
+  //   UsersService,
+  //   PostsService,
+  //   UsersResolver,
+  //   PostsResolver,
+  //   CommentsResolver,
+  // ],
   imports: [
     // NotificationsModule,
     // Importando módulo do Multer, que é Global e pode ser acessado por toda a aplicação a partir dessa importação.
@@ -48,7 +50,7 @@ import { PostsResolver } from './posts/posts.resolver';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
     }),
     StorageModule,
-    // UsersModule,
+    UsersModule,
     PostsModule,
   ],
 
