@@ -29,7 +29,8 @@ lerna-debug.log*
 
 .env
 
-uploads/
+uploads/*/*
+
 
 firebase-admin-sdk.json
 

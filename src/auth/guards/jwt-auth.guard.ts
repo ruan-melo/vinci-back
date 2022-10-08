@@ -1,5 +1,7 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_AUTH_OPTIONAL_KEY, IS_PUBLIC_KEY, OVERRIDE_KEY } from '.';
 
@@ -7,6 +9,12 @@ import { IS_AUTH_OPTIONAL_KEY, IS_PUBLIC_KEY, OVERRIDE_KEY } from '.';
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private reflector: Reflector) {
     super();
+  }
+
+  getRequest(context: ExecutionContext) {
+    const ctx = GqlExecutionContext.create(context);
+
+    return ctx.getContext().req;
   }
 
   canActivate(context: ExecutionContext) {
@@ -31,7 +39,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err, user, info, context) {
+  handleRequest(err, user, info, context: ExecutionContext) {
     const isAuthOptional = this.reflector.getAllAndOverride<boolean>(
       IS_AUTH_OPTIONAL_KEY,
       [context.getHandler(), context.getClass()],

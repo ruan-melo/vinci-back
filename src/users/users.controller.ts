@@ -46,18 +46,17 @@ import { RegisterTokenDto } from './dto/register-token-dto';
 @Controller('users')
 export class UsersController {
   constructor(
-    private usersService: UsersService,
-    private tokensService: TokensService,
+    private usersService: UsersService, // private tokensService: TokensService,
   ) {}
 
-  @Post('/tokens')
-  async registerToken(
-    @Body() registerTokenDto: RegisterTokenDto,
-    @User() user: UserJwt,
-  ) {
-    await this.tokensService.storeToken(registerTokenDto.token, user.id);
-    return;
-  }
+  // @Post('/tokens')
+  // async registerToken(
+  //   @Body() registerTokenDto: RegisterTokenDto,
+  //   @User() user: UserJwt,
+  // ) {
+  //   await this.tokensService.storeToken(registerTokenDto.token, user.id);
+  //   return;
+  // }
 
   @Get()
   async findAll(): Promise<UserMap[]> {

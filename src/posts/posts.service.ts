@@ -45,6 +45,14 @@ export class PostsService {
     return this.prismaService.post.findMany();
   }
 
+  async getPostMedias(postId: string) {
+    const medias = await this.prismaService.postMedia.findMany({
+      where: { postId },
+    });
+
+    return medias;
+  }
+
   async findOne(id: string, include?: Prisma.PostInclude) {
     const post = await this.prismaService.post.findFirst({
       where: { id },
@@ -66,6 +74,15 @@ export class PostsService {
       throw new Error('Unauthorized');
     }
     await this.prismaService.post.delete({ where: { id: postId } });
+  }
+
+  async findByAuthor(authorId: string) {
+    return this.prismaService.post.findMany({
+      where: { authorId },
+      include: {
+        medias: true,
+      },
+    });
   }
 
   async getTimeline(userId: string) {
