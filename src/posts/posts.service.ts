@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Post as PrismaPost } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { MEDIA_FOLDER } from 'src/storage/config/upload/media';
 import { StorageProviderInterface } from 'src/storage/storage-provider.interface';
-import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
@@ -61,7 +60,10 @@ export class PostsService {
     return comment;
   }
 
-  async findOne(id: string, include?: Prisma.PostInclude) {
+  async findOne(
+    id: string,
+    include?: Prisma.PostInclude,
+  ): Promise<PrismaPost & { _count?: { likes?: number; comments?: number } }> {
     const post = await this.prismaService.post.findFirst({
       where: { id },
       include,

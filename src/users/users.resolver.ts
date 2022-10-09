@@ -28,15 +28,23 @@ export class UsersResolver {
   ) {}
 
   @UseGuards(JwtAuthGuard)
-  @Query((returns) => User, { name: 'user' })
-  async getUserByEmail(@Args('email', { type: () => String }) email: string) {
-    return this.usersService.findByEmail(email);
+  @Query((returns) => User, { name: 'profile' })
+  async getProfile(
+    @Args('profile_name', { type: () => String }) profile_name: string,
+  ) {
+    return this.usersService.findByProfileName(profile_name);
   }
 
+  // @UseGuards(JwtAuthGuard)
+  // @Query((returns) => User, { name: 'user' })
+  // async getUser(@Args('userId', { type: () => String }) userID: string) {
+  //   return this.usersService.findById(userID);
+  // }
+
   @UseGuards(JwtAuthGuard)
-  @Query((returns) => User, { name: 'profile' })
-  async getProfile(@UserParam(ContextType.GRAPHQL) user: UserJwt) {
-    return this.usersService.findById(user.id);
+  @Query((returns) => [User], { name: 'users' })
+  async getUsers() {
+    return this.usersService.findAll();
   }
 
   @UseGuards(JwtAuthGuard)
@@ -53,6 +61,19 @@ export class UsersResolver {
     return this.usersService.create(args);
   }
 
+  @Mutation((returns) => User)
+  async changePassword(
+    @Args('oldPassword', { type: () => String }) oldPassword: string,
+    @Args('newPassword', { type: () => String }) newPassword: string,
+    @UserParam(ContextType.GRAPHQL) user: UserJwt,
+  ) {
+    return this.usersService.changePassword(user.id, {
+      current_password: oldPassword,
+      new_password: newPassword,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Mutation((returns) => String)
   async follow(
     @Args('profile_name', { type: () => String }) profile_name: string,
@@ -60,6 +81,11 @@ export class UsersResolver {
   ) {
     await this.usersService.follow(user.id, profile_name);
     return 'followed';
+  }
+
+  @Mutation((returns) => User)
+  async deleteAvatar(@UserParam(ContextType.GRAPHQL) user: UserJwt) {
+    return this.usersService.deleteAvatar(user.id);
   }
 
   @Mutation((returns) => String)
@@ -89,8 +115,25 @@ export class UsersResolver {
     const { id } = user;
 
     const userFollowersCount = await this.usersService.findById(id, {
-      _count: { select: { followers: true, follows: true } },
+      _count: { select: { followers: true } },
     });
     return userFollowersCount._count.followers || 0;
+  }
+
+  @ResolveField('follows', (returns) => [User])
+  async getFollows(@Parent() user: User) {
+    const { id } = user;
+
+    return this.usersService.getUserFollows(id);
+  }
+
+  @ResolveField('followsCount', (returns) => Int)
+  async getFollowsCount(@Parent() user: User) {
+    const { id } = user;
+
+    const userFollowsCount = await this.usersService.findById(id, {
+      _count: { select: { follows: true } },
+    });
+    return userFollowsCount._count.follows || 0;
   }
 }

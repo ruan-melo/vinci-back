@@ -49,6 +49,25 @@ export class UsersService {
     return userFollowers.followers.map((f) => f.follower) || [];
   }
 
+  async getUserFollows(userId: string): Promise<User[]> {
+    const userFollowers = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: {
+        follows: {
+          select: {
+            following: true,
+          },
+        },
+      },
+    });
+
+    if (!userFollowers) {
+      throw new UserNotFoundException();
+    }
+
+    return userFollowers.follows.map((f) => f.following) || [];
+  }
+
   async update(userId: string, data: Prisma.UserUpdateInput) {
     const user = await this.prismaService.user.findFirst({
       where: { id: userId },
@@ -66,12 +85,12 @@ export class UsersService {
     return userUpdated;
   }
 
-  async updatePassword(
+  async changePassword(
     userId,
     {
       current_password,
-      password,
-    }: { current_password: string; password: string },
+      new_password,
+    }: { current_password: string; new_password: string },
   ) {
     const user = await this.prismaService.user.findFirst({
       where: { id: userId },
@@ -91,7 +110,7 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(
-      password,
+      new_password,
       Number(process.env.PASSWORD_ROUNDS),
     );
 
@@ -252,9 +271,9 @@ export class UsersService {
       throw new UserNotFoundException();
     }
 
-    // if (followingUser.id === followerId) {
-    //   throw new HttpException('You cannot follow yourself', 400);
-    // }
+    if (followingUser.id === followerId) {
+      throw new HttpException('You cannot follow yourself', 400);
+    }
 
     const alreadyFollow = await this.prismaService.follow.findFirst({
       where: {

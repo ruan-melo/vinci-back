@@ -8,29 +8,6 @@ type Comment {
   author: User!
 }
 
-type Reaction {
-  postId: String!
-  userId: String!
-}
-
-type Post {
-  id: String!
-  likes: [Reaction!]
-  comments: [Comment!]
-  likesCount: Int
-  commentsCount: Int
-  caption: String
-  createdAt: DateTime
-  updatedAt: DateTime
-  author: User!
-  medias: [Media!]!
-}
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
-
 type User {
   id: String!
   name: String
@@ -42,6 +19,32 @@ type User {
   posts: [Post!]!
   followers: [User!]!
   followersCount: Int!
+  follows: [User!]!
+  followsCount: Int!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Reaction {
+  postId: String!
+  userId: String!
+  user: User
+}
+
+type Post {
+  id: String!
+  likes: [Reaction!]!
+  comments: [Comment!]!
+  likesCount: Int!
+  commentsCount: Int!
+  caption: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  author: User!
+  medias: [Media!]!
 }
 
 type Media {
@@ -53,18 +56,23 @@ type Media {
 }
 
 type Query {
-  user(email: String!): User!
-  profile: User!
+  profile(profile_name: String!): User!
+  users: [User!]!
   posts(email: String!): [Post!]!
+  timeline: [Post!]!
   post(id: String!): Post!
+  comments(postId: String!): [Comment!]!
 }
 
 type Mutation {
   editProfile(name: String, email: String, profile_name: String): User!
   createUser(name: String!, password: String!, email: String!, profile_name: String!): User!
+  changePassword(oldPassword: String!, newPassword: String!): User!
   follow(profile_name: String!): String!
+  deleteAvatar: User!
   unfollow(profile_name: String!): String!
   likePost(id: String!): Post!
+  deletePost(postId: String!): String!
   unlikePost(id: String!): Post!
   deleteComment(commentId: String!): String!
   comment(postId: String!, text: String!): Post!
