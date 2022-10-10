@@ -16,6 +16,7 @@ type User {
   profile_name: String
   createdAt: DateTime
   updatedAt: DateTime
+  followed: Boolean!
   posts: [Post!]!
   followers: [User!]!
   followersCount: Int!
@@ -45,6 +46,7 @@ type Post {
   updatedAt: DateTime
   author: User!
   medias: [Media!]!
+  liked: Boolean!
 }
 
 type Media {
@@ -56,7 +58,7 @@ type Media {
 }
 
 type Query {
-  profile(profile_name: String!): User!
+  profile(profile_name: String): User!
   users: [User!]!
   posts(email: String!): [Post!]!
   timeline: [Post!]!
@@ -71,9 +73,9 @@ type Mutation {
   follow(profile_name: String!): String!
   deleteAvatar: User!
   unfollow(profile_name: String!): String!
-  likePost(id: String!): Post!
+  likePost(postId: String!): Post!
   deletePost(postId: String!): String!
-  unlikePost(id: String!): Post!
+  unlikePost(postId: String!): Post!
   deleteComment(commentId: String!): String!
   comment(postId: String!, text: String!): Post!
 }

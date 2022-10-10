@@ -45,6 +45,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       [context.getHandler(), context.getClass()],
     );
 
+    console.log('isAuthOptional', isAuthOptional);
+    console.log('user auth', user, info, err);
+
     if (isAuthOptional && !user) {
       return null;
     }

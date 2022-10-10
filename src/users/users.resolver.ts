@@ -1,4 +1,4 @@
-import { forwardRef, Inject, UseGuards } from '@nestjs/common';
+import { forwardRef, HttpException, Inject, UseGuards } from '@nestjs/common';
 import {
   Args,
   Int,
@@ -8,7 +8,7 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { JwtAuthGuard } from 'src/auth/guards';
+import { AuthOptional, JwtAuthGuard } from 'src/auth/guards';
 import { Post } from 'src/posts/models/post.model';
 import { PostsService } from 'src/posts/posts.service';
 import { CreateUserArgs } from './dto/create-user.args';
@@ -28,18 +28,60 @@ export class UsersResolver {
   ) {}
 
   @UseGuards(JwtAuthGuard)
+  @AuthOptional()
   @Query((returns) => User, { name: 'profile' })
   async getProfile(
-    @Args('profile_name', { type: () => String }) profile_name: string,
+    @Args('profile_name', { type: () => String, nullable: true })
+    profile_name?: string,
+    @UserParam(ContextType.GRAPHQL) user?: UserJwt,
   ) {
-    return this.usersService.findByProfileName(profile_name);
+    if (profile_name) {
+      return this.usersService.findByProfileName(profile_name);
+    }
+
+    if (user) {
+      return this.usersService.findById(user.id);
+    }
+
+    console.log('user', user, profile_name);
+
+    throw new HttpException('Not found', 404);
   }
 
   // @UseGuards(JwtAuthGuard)
-  // @Query((returns) => User, { name: 'user' })
-  // async getUser(@Args('userId', { type: () => String }) userID: string) {
-  //   return this.usersService.findById(userID);
+  // @AuthOptional()
+  // @ResolveField('isOwner', (returns) => Boolean)
+  // async isProfileOwner(
+  //   @Parent() post: Post & { authorId: string },
+  //   @UserParam(ContextType.GRAPHQL) user?: UserJwt,
+  // ) {
+  //   const { authorId } = post;
+
+  //   if (!user) {
+  //     return false;
+  //   }
+
+  //   return authorId === user.id;
   // }
+
+  @UseGuards(JwtAuthGuard)
+  @AuthOptional()
+  @ResolveField('followed', (returns) => Boolean)
+  async isFollowing(
+    @Parent() user: User,
+    @UserParam(ContextType.GRAPHQL) loggedUser?: UserJwt,
+  ) {
+    if (!loggedUser) {
+      return false;
+    }
+
+    const followed = await this.usersService.isFollowing(
+      loggedUser.id,
+      user.profile_name,
+    );
+
+    return followed;
+  }
 
   @UseGuards(JwtAuthGuard)
   @Query((returns) => [User], { name: 'users' })

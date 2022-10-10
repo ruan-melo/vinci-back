@@ -5,6 +5,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -13,12 +14,14 @@ import {
   MediaFilesValidationPipe,
   uploadMediaConfig,
 } from 'src/storage/config/upload/media';
+import { JwtAuthGuard } from 'src/auth/guards';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('files', 5, uploadMediaConfig))
   create(
     @Request() req: any,

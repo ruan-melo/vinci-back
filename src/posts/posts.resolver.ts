@@ -61,6 +61,7 @@ export class PostsResolver {
     return this.usersService.findByEmail(email);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Query((returns) => [Post], { name: 'timeline' })
   async getTimeline(@UserParam(ContextType.GRAPHQL) user: UserJwt) {
     return this.postsService.getTimeline(user.id);
@@ -70,6 +71,7 @@ export class PostsResolver {
   @Query((returns) => Post, { name: 'post' })
   async getPost(
     @Args('id', { type: () => String }) id: string,
+    // @UserParam(ContextType.GRAPHQL) user: UserJwt,
     // @FieldMap()
     // selections: {
     //   likes?: Selection<Reaction>;
@@ -114,23 +116,31 @@ export class PostsResolver {
     //       : false,
     // });
 
-    return this.postsService.findOne(id);
+    const post = this.postsService.findOne(id);
+
+    // console.log('USer', user);
+
+    if (!post) {
+      throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+    }
+
+    return post;
   }
 
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => Post)
   async likePost(
-    @Args('id', { type: () => String }) id: string,
+    @Args('postId', { type: () => String }) postId: string,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
-    const post = await this.postsService.findOne(id);
+    const post = await this.postsService.findOne(postId);
 
     if (!post) {
       throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
     }
 
     const alreadyLiked = await this.postsService.hasLiked({
-      postId: id,
+      postId,
       userId: user.id,
     });
 
@@ -139,7 +149,7 @@ export class PostsResolver {
     }
 
     const like = await this.postsService.likePost({
-      postId: id,
+      postId,
       userId: user.id,
     });
 
@@ -165,17 +175,17 @@ export class PostsResolver {
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => Post)
   async unlikePost(
-    @Args('id', { type: () => String }) id: string,
+    @Args('postId', { type: () => String }) postId: string,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
-    const post = await this.postsService.findOne(id);
+    const post = await this.postsService.findOne(postId);
 
     if (!post) {
       throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
     }
 
     const liked = await this.postsService.hasLiked({
-      postId: id,
+      postId,
       userId: user.id,
     });
 
@@ -184,7 +194,7 @@ export class PostsResolver {
     }
 
     await this.postsService.unlikePost({
-      postId: id,
+      postId,
       userId: user.id,
     });
 
@@ -224,6 +234,7 @@ export class PostsResolver {
     return comments;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Mutation((returns) => Post)
   async comment(
     @Args() data: CreateCommentArgs,
@@ -246,6 +257,7 @@ export class PostsResolver {
   }
 
   // @Mutation((returns) => Post)
+  @UseGuards(JwtAuthGuard)
   @ResolveField('author', (returns) => User)
   async getAuthor(@Parent() post: PrismaPost) {
     const { authorId } = post;
@@ -295,5 +307,22 @@ export class PostsResolver {
     const medias = await this.postsService.getPostMedias(id);
 
     return medias.map((m) => mediaMapper(m));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ResolveField('liked', (returns) => Boolean)
+  async hasLiked(
+    @Parent() post: Post & { authorId: string },
+    @UserParam(ContextType.GRAPHQL) user: UserJwt,
+  ) {
+    const { id } = post;
+
+    const liked = await this.postsService.hasLiked({
+      postId: id,
+      userId: user.id,
+    });
+
+    // console.log('liked', id, author);
+    return liked;
   }
 }
