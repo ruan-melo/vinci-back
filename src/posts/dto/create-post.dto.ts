@@ -81,7 +81,7 @@ export class CreatePostDto
     return value;
   })
   @MaxLength(2200)
-  caption: string;
+  caption?: string;
 
   // @IsNotEmpty()
   // @ValidateNested({ each: true })

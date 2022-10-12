@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   Args,
+  ID,
   Info,
   Int,
   IntersectionType,
@@ -53,13 +54,13 @@ export class PostsResolver {
   ) {}
 
   // @UseGuards(JwtAuthGuard)
-  @Query((returns) => [Post], { name: 'posts' })
-  async getPosts(
-    @Args('email', { type: () => String }) email: string,
-    // @UserParam() user: User,
-  ) {
-    return this.usersService.findByEmail(email);
-  }
+  // @Query((returns) => [Post], { name: 'posts' })
+  // async getPosts(
+  //   @Args('email', { type: () => String }) email: string,
+  //   // @UserParam() user: User,
+  // ) {
+  //   return this.usersService.findByEmail(email);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Query((returns) => [Post], { name: 'timeline' })
@@ -70,7 +71,7 @@ export class PostsResolver {
   @UseGuards(JwtAuthGuard)
   @Query((returns) => Post, { name: 'post' })
   async getPost(
-    @Args('id', { type: () => String }) id: string,
+    @Args('id', { type: () => ID }) id: string,
     // @UserParam(ContextType.GRAPHQL) user: UserJwt,
     // @FieldMap()
     // selections: {
@@ -130,7 +131,7 @@ export class PostsResolver {
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => Post)
   async likePost(
-    @Args('postId', { type: () => String }) postId: string,
+    @Args('postId', { type: () => ID }) postId: string,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
     const post = await this.postsService.findOne(postId);
@@ -161,7 +162,7 @@ export class PostsResolver {
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => String)
   async deletePost(
-    @Args('postId', { type: () => String }) id: string,
+    @Args('postId', { type: () => ID }) id: string,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
     await this.postsService.delete({
@@ -175,7 +176,7 @@ export class PostsResolver {
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => Post)
   async unlikePost(
-    @Args('postId', { type: () => String }) postId: string,
+    @Args('postId', { type: () => ID }) postId: string,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
     const post = await this.postsService.findOne(postId);
@@ -206,7 +207,7 @@ export class PostsResolver {
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => String)
   async deleteComment(
-    @Args('commentId', { type: () => String }) commentId: string,
+    @Args('commentId', { type: () => ID }) commentId: string,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
     const comment = await this.postsService.getComment(commentId);
@@ -227,7 +228,7 @@ export class PostsResolver {
   // @UseGuards(JwtAuthGuard)
   @Query((returns) => [Comment], { name: 'comments' })
   async getPostComments(
-    @Args('postId', { type: () => String }) postId: string,
+    @Args('postId', { type: () => ID }) postId: string,
   ): Promise<Comment[]> {
     const comments = await this.postsService.getComments(postId);
 
@@ -235,7 +236,7 @@ export class PostsResolver {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Mutation((returns) => Post)
+  @Mutation((returns) => Comment)
   async comment(
     @Args() data: CreateCommentArgs,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
@@ -253,7 +254,7 @@ export class PostsResolver {
       text,
     });
 
-    return post;
+    return comment;
   }
 
   // @Mutation((returns) => Post)

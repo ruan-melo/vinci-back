@@ -43,8 +43,6 @@ export class UsersResolver {
       return this.usersService.findById(user.id);
     }
 
-    console.log('user', user, profile_name);
-
     throw new HttpException('Not found', 404);
   }
 
@@ -130,6 +128,7 @@ export class UsersResolver {
     return this.usersService.deleteAvatar(user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Mutation((returns) => String)
   async unfollow(
     @Args('profile_name', { type: () => String }) profile_name: string,
@@ -142,7 +141,10 @@ export class UsersResolver {
   @ResolveField('posts', (returns) => [Post])
   async getPosts(@Parent() author: User) {
     const { id } = author;
-    return this.postsService.findByAuthor(id);
+    const posts = await this.postsService.findByAuthor(id);
+
+    console.log('posts', posts);
+    return posts;
   }
 
   @ResolveField('followers', (returns) => [User])

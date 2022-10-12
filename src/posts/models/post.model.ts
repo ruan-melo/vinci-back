@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Post as PrismaPost } from '@prisma/client';
 import { Expose } from 'class-transformer';
 import { Comment } from './comment.model';
@@ -7,7 +7,7 @@ import { Reaction } from './reaction.model';
 
 @ObjectType()
 export class Post {
-  @Field(() => String)
+  @Field(() => ID)
   id: string;
 
   @Field(() => [Reaction], { nullable: true })

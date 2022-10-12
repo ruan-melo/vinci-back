@@ -34,7 +34,7 @@ model Post{
   id         String @id @default(uuid())
   author     User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId   String
-  caption    String @db.VarChar(2200)
+  caption    String? @db.VarChar(2200)
   medias     PostMedia[]
   comments   Comment[]
   likes  Reaction[]

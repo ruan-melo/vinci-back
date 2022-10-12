@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Comment as PrismaComment } from '@prisma/client';
 import { Expose } from 'class-transformer';
 import { Media } from './media.model';
@@ -7,7 +7,7 @@ import { Media } from './media.model';
 export class Comment {
   authorId: string;
 
-  @Field(() => String)
+  @Field(() => ID)
   id: string;
 
   @Field(() => String, { nullable: true })

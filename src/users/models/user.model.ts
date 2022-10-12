@@ -1,10 +1,10 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { User as UserPrisma } from '@prisma/client';
 import { Post } from 'src/posts/models/post.model';
 
 @ObjectType()
 export class User {
-  @Field(() => String)
+  @Field(() => ID)
   id: string;
 
   @Field({ nullable: true })

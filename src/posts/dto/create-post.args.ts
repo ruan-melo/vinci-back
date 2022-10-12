@@ -58,7 +58,7 @@ export class CreatePostArgs
   })
   @MaxLength(2200)
   @Field()
-  caption: string;
+  caption?: string;
 
   @Field(() => GraphQLUpload)
   media_url: Promise<FileUpload>;

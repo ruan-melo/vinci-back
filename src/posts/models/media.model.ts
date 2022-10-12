@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Expose } from 'class-transformer';
 // import { Expose } from 'class-transformer';
 import { PostMedia } from 'prisma/prisma-client';
@@ -11,7 +11,7 @@ export const MEDIA_PATH =
 
 @ObjectType()
 export class Media {
-  @Field(() => String)
+  @Field(() => ID)
   id: string;
 
   @Field(() => Int)

@@ -3,13 +3,13 @@
 # ------------------------------------------------------
 
 type Comment {
-  id: String!
+  id: ID!
   text: String
   author: User!
 }
 
 type User {
-  id: String!
+  id: ID!
   name: String
   avatar: String
   email: String
@@ -36,7 +36,7 @@ type Reaction {
 }
 
 type Post {
-  id: String!
+  id: ID!
   likes: [Reaction!]!
   comments: [Comment!]!
   likesCount: Int!
@@ -50,7 +50,7 @@ type Post {
 }
 
 type Media {
-  id: String!
+  id: ID!
   position: Int!
   media_url: String!
   createdAt: DateTime
@@ -60,10 +60,9 @@ type Media {
 type Query {
   profile(profile_name: String): User!
   users: [User!]!
-  posts(email: String!): [Post!]!
   timeline: [Post!]!
-  post(id: String!): Post!
-  comments(postId: String!): [Comment!]!
+  post(id: ID!): Post!
+  comments(postId: ID!): [Comment!]!
 }
 
 type Mutation {
@@ -73,9 +72,9 @@ type Mutation {
   follow(profile_name: String!): String!
   deleteAvatar: User!
   unfollow(profile_name: String!): String!
-  likePost(postId: String!): Post!
-  deletePost(postId: String!): String!
-  unlikePost(postId: String!): Post!
-  deleteComment(commentId: String!): String!
-  comment(postId: String!, text: String!): Post!
+  likePost(postId: ID!): Post!
+  deletePost(postId: ID!): String!
+  unlikePost(postId: ID!): Post!
+  deleteComment(commentId: ID!): String!
+  comment(postId: ID!, text: String!): Comment!
 }

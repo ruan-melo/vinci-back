@@ -25,7 +25,7 @@ export class PostsService {
     const post = await this.prismaService.post.create({
       data: {
         authorId,
-        caption,
+        caption: caption || null,
         medias: {
           create: filenames.map((filename, index) => ({
             position: index,
