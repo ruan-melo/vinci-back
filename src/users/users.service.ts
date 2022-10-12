@@ -15,6 +15,20 @@ export class UsersService {
     private storageProvider: StorageProviderInterface,
   ) {}
 
+  async searchUsers(search: string) {
+    const users = await this.prismaService.user.findMany({
+      where: {
+        OR: [
+          { profile_name: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+        ],
+      },
+      take: 5,
+    });
+
+    return users;
+  }
+
   async findAll(): Promise<User[]> {
     return await this.prismaService.user.findMany();
   }

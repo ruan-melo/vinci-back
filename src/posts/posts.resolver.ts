@@ -40,6 +40,7 @@ import { postMapper } from './mappers/postMapper';
 import { CreateCommentArgs } from './dto/create-comment.args';
 import { Comment } from './models/comment.model';
 import { Reaction } from './models/reaction.model';
+import { userMapper } from 'src/users/mappers/user.mapper';
 
 type Selection<Type> = {
   [Property in keyof Type]?: boolean;
@@ -265,14 +266,17 @@ export class PostsResolver {
 
     const author = await this.usersService.findById(authorId);
 
-    return author;
+    return userMapper(author);
   }
 
   @ResolveField('likes', (returns) => [Reaction])
   async getLikes(@Parent() post: PrismaPost) {
     const { id } = post;
     const likes = await this.postsService.getLikes(id);
-    return likes;
+    return likes.map((like) => ({
+      ...like,
+      user: userMapper(like.user),
+    }));
   }
 
   @ResolveField('likesCount', (returns) => Int)

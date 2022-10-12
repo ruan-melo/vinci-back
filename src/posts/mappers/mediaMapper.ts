@@ -7,8 +7,8 @@ export type MediaMap = Omit<PostMedia, 'media'> & {
 
 export const MEDIA_PATH =
   process.env.STORAGE_TYPE === 'disk'
-    ? `${process.env.APP_URL}/${MEDIA_FOLDER}`
-    : `${process.env.APP_URL}/${MEDIA_FOLDER}`;
+    ? `${process.env.APP_URL}/static/${MEDIA_FOLDER}`
+    : `${process.env.APP_URL}/static/${MEDIA_FOLDER}`;
 
 export function mediaMapper({ media, ...rest }: PostMedia): MediaMap {
   return {

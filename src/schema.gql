@@ -59,7 +59,7 @@ type Media {
 
 type Query {
   profile(profile_name: String): User!
-  users: [User!]!
+  searchUser(search: String!): [User!]!
   timeline: [Post!]!
   post(id: ID!): Post!
   comments(postId: ID!): [Comment!]!
@@ -68,7 +68,7 @@ type Query {
 type Mutation {
   editProfile(name: String, email: String, profile_name: String): User!
   createUser(name: String!, password: String!, email: String!, profile_name: String!): User!
-  changePassword(oldPassword: String!, newPassword: String!): User!
+  editPassword(password: String!, currentPassword: String!): User!
   follow(profile_name: String!): String!
   deleteAvatar: User!
   unfollow(profile_name: String!): String!

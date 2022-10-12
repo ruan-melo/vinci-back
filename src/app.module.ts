@@ -41,6 +41,7 @@ import { CommentsResolver } from './posts/comments.resolver';
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/static',
       exclude: ['/graphql'],
     }),
     PrismaModule.forRoot({ isGlobal: true }),

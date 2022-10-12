@@ -1,4 +1,10 @@
-import { forwardRef, HttpException, Inject, UseGuards } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  Inject,
+  UseFilters,
+  UseGuards,
+} from '@nestjs/common';
 import {
   Args,
   Int,
@@ -18,7 +24,11 @@ import { UsersService } from './users.service';
 import { ContextType, User as UserParam } from 'src/decorators/user.decorator';
 import { UserJwt } from 'src/auth/strategies/jwt.strategy';
 import { EditProfileArgs } from './dto/edit-profile.args';
+import { UpdateUserPasswordArgs } from './dto/update-user-password.args';
+import { HttpExceptionFilter } from 'src/filters/HttpExceptionFilter';
+import { userMapper } from './mappers/user.mapper';
 
+@UseFilters(new HttpExceptionFilter())
 @Resolver((of) => User)
 export class UsersResolver {
   constructor(
@@ -36,31 +46,26 @@ export class UsersResolver {
     @UserParam(ContextType.GRAPHQL) user?: UserJwt,
   ) {
     if (profile_name) {
-      return this.usersService.findByProfileName(profile_name);
+      const user = await this.usersService.findByProfileName(profile_name);
+      return userMapper(user);
     }
 
     if (user) {
-      return this.usersService.findById(user.id);
+      const findUser = await this.usersService.findById(user.id);
+      return userMapper(findUser);
     }
 
     throw new HttpException('Not found', 404);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @AuthOptional()
-  // @ResolveField('isOwner', (returns) => Boolean)
-  // async isProfileOwner(
-  //   @Parent() post: Post & { authorId: string },
-  //   @UserParam(ContextType.GRAPHQL) user?: UserJwt,
-  // ) {
-  //   const { authorId } = post;
-
-  //   if (!user) {
-  //     return false;
-  //   }
-
-  //   return authorId === user.id;
-  // }
+  @Query((returns) => [User])
+  async searchUser(
+    @Args('search', { type: () => String }) search: string,
+    // @UserParam(ContextType.GRAPHQL) user?: UserJwt,
+  ) {
+    const users = await this.usersService.searchUsers(search);
+    return users.map((user) => userMapper(user));
+  }
 
   @UseGuards(JwtAuthGuard)
   @AuthOptional()
@@ -81,11 +86,12 @@ export class UsersResolver {
     return followed;
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Query((returns) => [User], { name: 'users' })
-  async getUsers() {
-    return this.usersService.findAll();
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Query((returns) => [User], { name: 'users' })
+  // async getUsers() {
+  //   const users = this.usersService.findAll();
+  //   return userMapper;
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Mutation((returns) => User)
@@ -93,7 +99,8 @@ export class UsersResolver {
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
     @Args() data: EditProfileArgs,
   ) {
-    return this.usersService.update(user.id, data);
+    const userUpdated = await this.usersService.update(user.id, data);
+    return userMapper(userUpdated);
   }
 
   @Mutation((returns) => User)
@@ -101,16 +108,20 @@ export class UsersResolver {
     return this.usersService.create(args);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Mutation((returns) => User)
-  async changePassword(
-    @Args('oldPassword', { type: () => String }) oldPassword: string,
-    @Args('newPassword', { type: () => String }) newPassword: string,
+  async editPassword(
+    @Args() data: UpdateUserPasswordArgs,
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
-    return this.usersService.changePassword(user.id, {
-      current_password: oldPassword,
-      new_password: newPassword,
+    const { currentPassword, password } = data;
+
+    const updatedUser = await this.usersService.changePassword(user.id, {
+      current_password: currentPassword,
+      new_password: password,
     });
+
+    return userMapper(updatedUser);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -125,7 +136,8 @@ export class UsersResolver {
 
   @Mutation((returns) => User)
   async deleteAvatar(@UserParam(ContextType.GRAPHQL) user: UserJwt) {
-    return this.usersService.deleteAvatar(user.id);
+    const updatedUser = await this.usersService.deleteAvatar(user.id);
+    return userMapper(updatedUser);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -143,7 +155,6 @@ export class UsersResolver {
     const { id } = author;
     const posts = await this.postsService.findByAuthor(id);
 
-    console.log('posts', posts);
     return posts;
   }
 
@@ -151,7 +162,8 @@ export class UsersResolver {
   async getFollowers(@Parent() user: User) {
     const { id } = user;
 
-    return this.usersService.getUserFollowers(id);
+    const users = await this.usersService.getUserFollowers(id);
+    return users.map((user) => userMapper(user));
   }
 
   @ResolveField('followersCount', (returns) => Int)
@@ -168,7 +180,8 @@ export class UsersResolver {
   async getFollows(@Parent() user: User) {
     const { id } = user;
 
-    return this.usersService.getUserFollows(id);
+    const users = await this.usersService.getUserFollows(id);
+    return users.map((user) => userMapper(user));
   }
 
   @ResolveField('followsCount', (returns) => Int)

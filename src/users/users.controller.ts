@@ -3,6 +3,7 @@ import {
   Patch,
   Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -14,6 +15,8 @@ import {
   uploadAvatarConfig,
 } from 'src/storage/config/upload/avatar';
 import { UserMap, userMapper } from './mappers/user.mapper';
+import { JwtAuthGuard } from 'src/auth/guards';
+import { User } from './models/user.model';
 
 @Controller('users')
 export class UsersController {
@@ -30,13 +33,14 @@ export class UsersController {
   //   return;
   // }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('profile/avatar')
   @UseInterceptors(FileInterceptor('file', uploadAvatarConfig))
   async updateAvatar(
     @Req() req: { user: UserJwt },
     @UploadedFile(ParseAvatarFilePipe)
     file: Express.Multer.File,
-  ): Promise<UserMap> {
+  ): Promise<User> {
     const user = await this.usersService.updateAvatar(req.user.id, file);
 
     return userMapper(user);
