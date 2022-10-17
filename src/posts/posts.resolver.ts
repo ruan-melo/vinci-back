@@ -120,8 +120,6 @@ export class PostsResolver {
 
     const post = this.postsService.findOne(id);
 
-    // console.log('USer', user);
-
     if (!post) {
       throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
     }
@@ -327,7 +325,6 @@ export class PostsResolver {
       userId: user.id,
     });
 
-    // console.log('liked', id, author);
     return liked;
   }
 }

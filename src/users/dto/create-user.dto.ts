@@ -43,7 +43,7 @@ export class CreateUserDto
   @IsString()
   @Transform(({ value }: TransformFnParams) => {
     if (typeof value === 'string') {
-      return value.trim();
+      return value.trim().toLowerCase();
     }
     return value;
   })

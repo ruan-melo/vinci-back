@@ -16,6 +16,11 @@ export class FirebaseService {
     });
 
     this.messaging = getMessaging(this.app);
+    // this.messaging.send({
+    //   token:
+    //     'fQEALcwMZmFZPXmS2PEZ97:APA91bHnBXfFvhMk35BZQ96TgK7kvyKkNuq38DBE6X_fpjEIaipiNHdlwDdqNqhBRHhAXtwz6TDDn3fBG3WPmadhyk0pmfLMw8IQYICUPIi9v_bmem6RBkXX92pOe2SECW9kyCE50Eo3',
+    //   data: { test: 'test' },
+    // });
     this.database = getDatabase(this.app);
   }
 

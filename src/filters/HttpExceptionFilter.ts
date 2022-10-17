@@ -5,7 +5,7 @@ import { GqlArgumentsHost, GqlExceptionFilter } from '@nestjs/graphql';
 export class HttpExceptionFilter implements GqlExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const gqlHost = GqlArgumentsHost.create(host);
-    // console.log('caralho', gqlHost.getInfo(), gqlHost.getArgs());
+
     return exception;
   }
 }

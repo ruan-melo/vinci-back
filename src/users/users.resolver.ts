@@ -27,6 +27,7 @@ import { EditProfileArgs } from './dto/edit-profile.args';
 import { UpdateUserPasswordArgs } from './dto/update-user-password.args';
 import { HttpExceptionFilter } from 'src/filters/HttpExceptionFilter';
 import { userMapper } from './mappers/user.mapper';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @UseFilters(new HttpExceptionFilter())
 @Resolver((of) => User)
@@ -35,6 +36,7 @@ export class UsersResolver {
     private usersService: UsersService,
     @Inject(forwardRef(() => PostsService))
     private postsService: PostsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -47,11 +49,16 @@ export class UsersResolver {
   ) {
     if (profile_name) {
       const user = await this.usersService.findByProfileName(profile_name);
+
+      if (!user) {
+        throw new HttpException('Not found', 404);
+      }
       return userMapper(user);
     }
 
     if (user) {
       const findUser = await this.usersService.findById(user.id);
+
       return userMapper(findUser);
     }
 
@@ -131,6 +138,24 @@ export class UsersResolver {
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
     await this.usersService.follow(user.id, profile_name);
+    const userFollowed = await this.usersService.findByProfileName(
+      profile_name,
+    );
+
+    const follower = await this.usersService.findById(user.id);
+
+    this.notificationsService.sendFollowNotification({
+      follower: {
+        ...follower,
+      },
+      followingId: userFollowed.id,
+    });
+
+    this.notificationsService.updatePostPreference({
+      authorId: userFollowed.id,
+      userId: user.id,
+      preference: true,
+    });
     return 'followed';
   }
 
@@ -147,6 +172,15 @@ export class UsersResolver {
     @UserParam(ContextType.GRAPHQL) user: UserJwt,
   ) {
     await this.usersService.unfollow(user.id, profile_name);
+    const userUnfollowed = await this.usersService.findByProfileName(
+      profile_name,
+    );
+    this.notificationsService.updatePostPreference({
+      authorId: userUnfollowed.id,
+      userId: user.id,
+      preference: false,
+    });
+
     return 'unfollowed';
   }
 

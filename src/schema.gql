@@ -57,12 +57,21 @@ type Media {
   updatedAt: DateTime
 }
 
+type FollowNotification {
+  id: ID!
+  timestamp: String!
+  read: Boolean!
+  follower: User!
+}
+
 type Query {
   profile(profile_name: String): User!
   searchUser(search: String!): [User!]!
   timeline: [Post!]!
   post(id: ID!): Post!
   comments(postId: ID!): [Comment!]!
+  notifications: [FollowNotification!]!
+  notification(id: ID!): FollowNotification!
 }
 
 type Mutation {
@@ -77,4 +86,6 @@ type Mutation {
   unlikePost(postId: ID!): Post!
   deleteComment(commentId: ID!): String!
   comment(postId: ID!, text: String!): Comment!
+  readNotification(id: ID!): FollowNotification!
+  readAllNotifications: [FollowNotification!]!
 }

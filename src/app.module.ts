@@ -50,6 +50,7 @@ import { CommentsResolver } from './posts/comments.resolver';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
     }),
+    NotificationsModule,
     StorageModule,
     UsersModule,
     PostsModule,

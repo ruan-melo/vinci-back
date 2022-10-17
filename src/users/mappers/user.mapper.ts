@@ -10,7 +10,7 @@ export const AVATAR_PATH =
     ? `${process.env.APP_URL}/static/${AVATAR_FOLDER}`
     : `${process.env.APP_URL}/static/${AVATAR_FOLDER}`;
 
-export function userMapper({ password, avatar, ...user }: User): UserMap {
+export function userMapper({ avatar, ...user }: User): UserMap {
   return {
     ...user,
     avatar: avatar ? `${AVATAR_PATH}/${avatar}` : null,

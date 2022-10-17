@@ -162,20 +162,16 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User> {
-    try {
-      return await this.prismaService.user.findUniqueOrThrow({
-        where: { email },
-        include: {
-          posts: {
-            include: {
-              medias: true,
-            },
+    return await this.prismaService.user.findUnique({
+      where: { email },
+      include: {
+        posts: {
+          include: {
+            medias: true,
           },
         },
-      });
-    } catch {
-      throw new UserNotFoundException();
-    }
+      },
+    });
   }
 
   async create(data: Prisma.UserCreateInput): Promise<User> {

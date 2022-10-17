@@ -27,9 +27,4 @@ export class Media {
 
   @Field(() => Date, { nullable: true })
   updatedAt: Date;
-
-  // getMediaUrl(): string {
-  //   console.log('CARALHO');
-  //   return this.media ? `${MEDIA_PATH}/${this.media}` : null;
-  // }
 }

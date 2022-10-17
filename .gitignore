@@ -30,6 +30,7 @@ lerna-debug.log*
 .env
 
 uploads/*/*
+temp/*/*
 
 
 firebase-admin-sdk.json

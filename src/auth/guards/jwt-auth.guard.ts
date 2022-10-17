@@ -1,6 +1,10 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_AUTH_OPTIONAL_KEY, IS_PUBLIC_KEY, OVERRIDE_KEY } from '.';
@@ -45,15 +49,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       [context.getHandler(), context.getClass()],
     );
 
-    console.log('isAuthOptional', isAuthOptional);
-    console.log('user auth', user, info, err);
-
     if (isAuthOptional && !user) {
       return null;
     }
 
     if (err || !user) {
-      throw err || new Error('Unauthorized');
+      throw err || new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
     super.handleRequest;
