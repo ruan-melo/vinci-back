@@ -353,8 +353,7 @@ export class NotificationsService {
       topic: `${author.id}-${NotificationType.NEW_POST}`,
       notification: {
         title:
-          `New post from @${author.profile_name}` +
-          `${post.caption.length > 0 ? `: ${post.caption}` : ''}`,
+          `New post from @${author.profile_name}` + `${post.caption ?? ''}`,
       },
       data: {
         // Send author data to be used in notification click (post id)
